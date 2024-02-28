@@ -8,7 +8,7 @@ Of course... I'm not great at Erlang, so maybe I screwed up the porting...
 
 ## Why?
 
-I personally don't really believe people need to jump on the "built-in Erlang `:global` is bad at scale!!!" train that everyone immediately jumps on when people start talking about distributed registries in Elixir. I don't think anybody who is jumping on that train is actually getting to a point where it seriously affects scale (seeing as the `:global` can get to a few thousand registrations per second according to the blog post and lookups are consistently very low). However, the post was written in 2015, and I wanted to see whether Syn (and the conclusions that @ostinelli came to) still hold up.
+I personally don't really believe people need to jump on the "built-in Erlang `:global` is bad at scale!!!" train that everyone immediately jumps on when people start talking about distributed registries in Elixir. I don't think anybody who is jumping on that train is actually getting to a point where it seriously affects scale (seeing as the `:global` can get to a few thousand registrations per second according to the blog post and lookups are consistently very low). However, the post was written in 2015, and I wanted to see whether Syn (and the conclusions that [@ostinelli](https://github.com/ostinelli) came to) still hold up.
 
 ## Results
 
