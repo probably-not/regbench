@@ -27,7 +27,9 @@ defmodule Regbench.MixProject do
 
   # Run "mix help deps" to learn about dependencies.
   defp deps do
-    []
+    [
+      {:syn, "~> 3.3"}
+    ]
   end
 
   # Aliases are shortcuts or tasks specific to the current project.
