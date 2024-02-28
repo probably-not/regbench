@@ -6,6 +6,6 @@ defmodule Regbench.Benchmark do
   @callback init() :: term()
   @callback register(key :: String.t(), pid()) :: term()
   @callback unregister(key :: String.t(), pid()) :: term()
-  @callback retrieve(key :: String.t()) :: pid() | nil
+  @callback retrieve(key :: String.t()) :: pid() | :undefined
   @callback process_loop() :: any()
 end

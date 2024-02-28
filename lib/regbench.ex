@@ -18,7 +18,7 @@ defmodule Regbench do
     # Benchmark: registration propogation
     {retrieved_in_ms_1, retrieve_process_1} = retrieve(:pid, benchmark_mod, upper_key)
     IO.puts("Check that process with Key #{upper_key} was found:")
-    IO.puts("#{retrieve_process_1} in #{retrieved_in_ms_1} ms")
+    IO.puts("#{inspect(retrieve_process_1)} in #{retrieved_in_ms_1} ms")
 
     # Benchmark: unregister
     {time_unregister, _} = :timer.tc(__MODULE__, :unregister, [benchmark_mod, pid_infos])
@@ -26,9 +26,9 @@ defmodule Regbench do
     IO.puts("Unregistered processes rate: #{process_count / time_unregister * 1_000_000}/sec")
 
     # Benchmark: unregistration propogation
-    {retrieved_in_ms_2, retrieve_process_2} = retrieve(nil, benchmark_mod, upper_key)
+    {retrieved_in_ms_2, retrieve_process_2} = retrieve(:undefined, benchmark_mod, upper_key)
     IO.puts("Check that process with Key #{upper_key} was NOT found:")
-    IO.puts("#{retrieved_in_ms_2} in #{retrieve_process_2} ms")
+    IO.puts("#{inspect(retrieve_process_2)} in #{retrieved_in_ms_2} ms")
 
     # Benchmark: re-registering
     {time_reregister, _} = :timer.tc(__MODULE__, :register, [benchmark_mod, pid_infos])
@@ -38,14 +38,14 @@ defmodule Regbench do
     # Benchmark: re-registration propogation
     {retrieved_in_ms_3, retrieve_process_3} = retrieve(:pid, benchmark_mod, upper_key)
     IO.puts("Check that process with Key #{upper_key} was found:")
-    IO.puts("#{retrieved_in_ms_3} in #{retrieve_process_3} ms")
+    IO.puts("#{inspect(retrieve_process_3)} in #{retrieved_in_ms_3} ms")
 
     # Benchmark: monitoring
     IO.puts("Kill all processes")
     kill_processes(pid_infos)
-    {retrieved_in_ms_4, retrieve_process_4} = retrieve(nil, benchmark_mod, upper_key)
+    {retrieved_in_ms_4, retrieve_process_4} = retrieve(:undefined, benchmark_mod, upper_key)
     IO.puts("Check that process with Key #{upper_key} was NOT found:")
-    IO.puts("#{retrieved_in_ms_4} in #{retrieve_process_4} ms")
+    IO.puts("#{inspect(retrieve_process_4)} in #{retrieved_in_ms_4} ms")
   end
 
   def connect_nodes(nodes) do
@@ -58,7 +58,7 @@ defmodule Regbench do
     upper_key = Integer.to_string(processes_per_node * length(nodes))
 
     node_procs =
-      Enum.reduce(nodes, fn node, acc ->
+      Enum.reduce(nodes, [], fn node, acc ->
         starting_key = length(acc) * processes_per_node
         pids = launch_processes_on_node(benchmark_mod, processes_per_node, starting_key, node)
         [{node, pids} | acc]
@@ -74,7 +74,7 @@ defmodule Regbench do
   end
 
   def register(benchmark_mod, pid_infos) do
-    Enum.reduce(pid_infos, fn {node, node_pid_infos}, acc ->
+    Enum.reduce(pid_infos, [], fn {node, node_pid_infos}, acc ->
       rpc_key =
         :rpc.async_call(node, __MODULE__, :register_on_node, [benchmark_mod, node_pid_infos])
 
@@ -100,11 +100,11 @@ defmodule Regbench do
     retrieve(expected, benchmark_mod, key, start_time)
   end
 
-  def retrieve(nil, benchmark_mod, key, start_time) do
+  def retrieve(:undefined, benchmark_mod, key, start_time) do
     case benchmark_mod.retrieve(key) do
-      nil ->
+      :undefined ->
         retrieved_in_ms = epoch_time_ms() - start_time
-        {retrieved_in_ms, nil}
+        {retrieved_in_ms, :undefined}
 
       {:error, error} ->
         {:error, error}
@@ -115,20 +115,20 @@ defmodule Regbench do
         if epoch_time_ms() > start_time + @max_retrieve_waiting_time do
           {:error, :timeout_during_retrieve}
         else
-          retrieve(nil, benchmark_mod, key, start_time)
+          retrieve(:undefined, benchmark_mod, key, start_time)
         end
     end
   end
 
-  def retrieve(pid, benchmark_mod, key, start_time) do
+  def retrieve(:pid, benchmark_mod, key, start_time) do
     case benchmark_mod.retrieve(key) do
-      nil ->
+      :undefined ->
         Process.sleep(50)
 
         if epoch_time_ms() > start_time + @max_retrieve_waiting_time do
           {:error, :timeout_during_retrieve}
         else
-          retrieve(pid, benchmark_mod, key, start_time)
+          retrieve(:pid, benchmark_mod, key, start_time)
         end
 
       {:error, error} ->
@@ -141,7 +141,7 @@ defmodule Regbench do
   end
 
   def unregister(benchmark_mod, pid_infos) do
-    Enum.reduce(pid_infos, fn {node, node_pid_infos}, acc ->
+    Enum.reduce(pid_infos, [], fn {node, node_pid_infos}, acc ->
       rpc_key =
         :rpc.async_call(node, __MODULE__, :unregister_on_node, [benchmark_mod, node_pid_infos])
 
