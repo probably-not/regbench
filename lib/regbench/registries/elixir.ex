@@ -2,7 +2,10 @@ defmodule Regbench.Registries.Elixir do
   @behaviour Regbench.Benchmark
 
   def init() do
-    Registry.start_link(keys: :unique, name: __MODULE__)
+    [node() | Node.list()]
+    |> Enum.each(fn node ->
+      :rpc.call(node, Registry, :start_link, [[keys: :unique, name: __MODULE__]])
+    end)
   end
 
   def register(key, pid) do
