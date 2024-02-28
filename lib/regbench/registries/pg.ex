@@ -2,7 +2,10 @@ defmodule Regbench.Registries.PG do
   @behaviour Regbench.Benchmark
 
   def init() do
-    :pg.start_link()
+    [node() | Node.list()]
+    |> Enum.each(fn node ->
+      :rpc.call(node, :pg, :start_link, [])
+    end)
   end
 
   def register(key, pid) do
