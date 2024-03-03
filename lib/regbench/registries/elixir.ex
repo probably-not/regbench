@@ -4,7 +4,9 @@ defmodule Regbench.Registries.Elixir do
   def init() do
     [node() | Node.list()]
     |> Enum.each(fn node ->
-      :rpc.call(node, Registry, :start_link, [[keys: :unique, name: __MODULE__]])
+      Node.spawn(node, fn ->
+        {:ok, _} = Registry.start_link(keys: :unique, name: __MODULE__)
+      end)
     end)
   end
 

@@ -4,8 +4,10 @@ defmodule Regbench.Registries.Syn do
   def init() do
     [node() | Node.list()]
     |> Enum.each(fn node ->
-      :rpc.call(node, :syn, :start, [])
-      :rpc.call(node, :syn, :add_node_to_scopes, [[:registry]])
+      Node.spawn(node, fn ->
+        :ok = :syn.start()
+        :ok = :syn.add_node_to_scopes([:registry])
+      end)
     end)
   end
 

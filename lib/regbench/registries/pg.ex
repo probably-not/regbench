@@ -4,7 +4,9 @@ defmodule Regbench.Registries.PG do
   def init() do
     [node() | Node.list()]
     |> Enum.each(fn node ->
-      :rpc.call(node, :pg, :start_link, [])
+      Node.spawn(node, fn ->
+        {:ok, _} = :pg.start_link()
+      end)
     end)
   end
 
