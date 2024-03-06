@@ -11,6 +11,8 @@ defmodule Regbench.Registries.PG do
   end
 
   def register(key, pid) do
+    # Make sure the group membership is empty (no duplicates for now)
+    [] = :pg.get_members(key)
     :ok = :pg.join(key, pid)
   end
 
