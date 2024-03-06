@@ -2,12 +2,9 @@ defmodule Regbench.Registries.Elixir do
   @behaviour Regbench.Benchmark
 
   def init() do
-    [node() | Node.list()]
-    |> Enum.each(fn node ->
-      Node.spawn(node, fn ->
-        {:ok, _} = Registry.start_link(keys: :unique, name: __MODULE__)
-      end)
-    end)
+    if length(Node.list()) > 0 do
+      raise "The Elixir Registry is a local only registry"
+    end
   end
 
   def register(key, pid) do
