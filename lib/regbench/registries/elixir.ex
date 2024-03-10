@@ -5,6 +5,8 @@ defmodule Regbench.Registries.Elixir do
     if length(Node.list()) > 0 do
       raise "The Elixir Registry is a local only registry"
     end
+
+    {:ok, _} = Registry.start_link(keys: :unique, name: __MODULE__)
   end
 
   def register(key, pid) do
