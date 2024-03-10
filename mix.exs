@@ -28,7 +28,8 @@ defmodule Regbench.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:syn, "~> 3.3"}
+      {:syn, "~> 3.3"},
+      {:horde, "~> 0.9"}
     ]
   end
 
