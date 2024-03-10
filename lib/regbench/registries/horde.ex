@@ -8,6 +8,9 @@ defmodule Regbench.Registries.Horde do
     |> Enum.each(fn node ->
       Node.spawn(node, fn ->
         IO.puts("starting horde registry")
+        # TODO: Fix Horde
+        # For some reason, even though Horde's registry is started, the ETS tables seem to be not started correctly...
+        # There's probably something strange going on there.
         {:ok, _} = Horde.Registry.start_link(keys: :unique, name: __MODULE__, members: nodes)
         IO.puts("started horde registry")
       end)
