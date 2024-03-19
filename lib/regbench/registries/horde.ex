@@ -6,17 +6,22 @@ defmodule Regbench.Registries.Horde do
 
     nodes
     |> Enum.each(fn node ->
+      ref = make_ref()
+      pid = self()
+
       Node.spawn(node, fn ->
-        IO.puts("starting horde registry")
         # TODO: Fix Horde
         # For some reason, even though Horde's registry is started, the ETS tables seem to be not started correctly...
         # There's probably something strange going on there.
         {:ok, _} = Horde.Registry.start_link(keys: :unique, name: __MODULE__, members: nodes)
-        IO.puts("started horde registry")
+        send(pid, {:ok, ref})
       end)
-    end)
 
-    Process.sleep(2_000)
+      receive do
+        {:ok, ^ref} ->
+          IO.puts("Initialized #{__MODULE__} on #{inspect(node)}")
+      end
+    end)
   end
 
   def register(key, pid) do
