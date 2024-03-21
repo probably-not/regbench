@@ -1,26 +1,10 @@
 defmodule Regbench.Registries.PG do
   @behaviour Regbench.Benchmark
 
-  def init() do
-    nodes = [node() | Node.list()]
+  def distributed?(), do: true
 
-    nodes
-    |> Enum.each(fn node ->
-      ref = make_ref()
-      pid = self()
-
-      Node.spawn(node, fn ->
-        {:ok, pgpid} = :pg.start_link()
-        Process.unlink(pgpid)
-        send(pid, {:ok, ref, pgpid})
-      end)
-
-      receive do
-        {:ok, ^ref, pgpid} ->
-          IO.puts("Initialized #{__MODULE__} on #{inspect(node)}")
-          Process.link(pgpid)
-      end
-    end)
+  def init(_nodes) do
+    :pg.start_link()
   end
 
   def register(key, pid) do

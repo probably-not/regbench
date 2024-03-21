@@ -1,25 +1,12 @@
 defmodule Regbench.Registries.Syn do
   @behaviour Regbench.Benchmark
 
-  def init() do
-    nodes = [node() | Node.list()]
+  def distributed?(), do: true
 
-    nodes
-    |> Enum.each(fn node ->
-      ref = make_ref()
-      pid = self()
-
-      Node.spawn(node, fn ->
-        :ok = :syn.start()
-        :ok = :syn.add_node_to_scopes([:registry])
-        send(pid, {:ok, ref})
-      end)
-
-      receive do
-        {:ok, ^ref} ->
-          IO.puts("Initialized #{__MODULE__} on #{inspect(node)}")
-      end
-    end)
+  def init(_nodes) do
+    :ok = :syn.start()
+    :ok = :syn.add_node_to_scopes([:registry])
+    :ok
   end
 
   def register(key, pid) do

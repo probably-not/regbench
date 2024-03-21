@@ -1,7 +1,9 @@
 defmodule Regbench.Registries.Global do
   @behaviour Regbench.Benchmark
 
-  def init() do
+  def distributed?(), do: true
+
+  def init(_nodes) do
     :ok
   end
 

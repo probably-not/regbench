@@ -1,26 +1,10 @@
 defmodule Regbench.Registries.Horde do
   @behaviour Regbench.Benchmark
 
-  def init() do
-    nodes = [node() | Node.list()]
+  def distributed?(), do: true
 
-    nodes
-    |> Enum.each(fn node ->
-      ref = make_ref()
-      pid = self()
-
-      Node.spawn(node, fn ->
-        {:ok, hpid} = Horde.Registry.start_link(keys: :unique, name: __MODULE__, members: nodes)
-        Process.unlink(hpid)
-        send(pid, {:ok, ref, hpid})
-      end)
-
-      receive do
-        {:ok, ^ref, hpid} ->
-          IO.puts("Initialized #{__MODULE__} on #{inspect(node)}")
-          Process.link(hpid)
-      end
-    end)
+  def init(nodes) do
+    Horde.Registry.start_link(keys: :unique, name: __MODULE__, members: nodes)
   end
 
   def register(key, pid) do

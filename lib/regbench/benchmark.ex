@@ -3,7 +3,8 @@ defmodule Regbench.Benchmark do
   A behaviour for a Process Registry benchmark.
   """
 
-  @callback init() :: term()
+  @callback distributed?() :: boolean()
+  @callback init(nodes :: list(node())) :: :ok | {:ok, pid()} | pid()
   @callback register(key :: String.t(), pid()) :: term()
   @callback unregister(key :: String.t(), pid()) :: term()
   @callback retrieve(key :: String.t()) :: pid() | :undefined
