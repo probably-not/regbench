@@ -1,5 +1,5 @@
 defmodule Regbench.Registries.Elixir do
-  @behaviour Regbench.Benchmark
+  use Regbench.Benchmark
 
   def distributed?(), do: false
 
@@ -23,13 +23,6 @@ defmodule Regbench.Registries.Elixir do
     else
       {pid, _} = Enum.at(pids, 0)
       pid
-    end
-  end
-
-  def process_loop() do
-    receive do
-      _ ->
-        :ok
     end
   end
 end

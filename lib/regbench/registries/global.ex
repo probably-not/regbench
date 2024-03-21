@@ -1,5 +1,5 @@
 defmodule Regbench.Registries.Global do
-  @behaviour Regbench.Benchmark
+  use Regbench.Benchmark
 
   def distributed?(), do: true
 
@@ -17,12 +17,5 @@ defmodule Regbench.Registries.Global do
 
   def retrieve(key) do
     :global.whereis_name(key)
-  end
-
-  def process_loop() do
-    receive do
-      _ ->
-        :ok
-    end
   end
 end

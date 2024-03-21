@@ -1,5 +1,5 @@
 defmodule Regbench.Registries.PG do
-  @behaviour Regbench.Benchmark
+  use Regbench.Benchmark
 
   def distributed?(), do: true
 
@@ -21,13 +21,6 @@ defmodule Regbench.Registries.PG do
     case :pg.get_members(key) do
       [] -> :undefined
       [pid] -> pid
-    end
-  end
-
-  def process_loop() do
-    receive do
-      _ ->
-        :ok
     end
   end
 end

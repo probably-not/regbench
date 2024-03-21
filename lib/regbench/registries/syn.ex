@@ -1,5 +1,5 @@
 defmodule Regbench.Registries.Syn do
-  @behaviour Regbench.Benchmark
+  use Regbench.Benchmark
 
   def distributed?(), do: true
 
@@ -21,13 +21,6 @@ defmodule Regbench.Registries.Syn do
     case :syn.lookup(:registry, key) do
       :undefined -> :undefined
       {pid, _} -> pid
-    end
-  end
-
-  def process_loop() do
-    receive do
-      _ ->
-        :ok
     end
   end
 end

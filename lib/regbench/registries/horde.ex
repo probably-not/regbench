@@ -1,5 +1,5 @@
 defmodule Regbench.Registries.Horde do
-  @behaviour Regbench.Benchmark
+  use Regbench.Benchmark
 
   def distributed?(), do: true
 
@@ -23,13 +23,6 @@ defmodule Regbench.Registries.Horde do
     else
       {pid, _} = Enum.at(pids, 0)
       pid
-    end
-  end
-
-  def process_loop() do
-    receive do
-      _ ->
-        :ok
     end
   end
 end
