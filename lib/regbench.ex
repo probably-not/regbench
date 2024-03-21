@@ -7,7 +7,7 @@ defmodule Regbench do
 
   def start(benchmark_mod, process_count, nodes) do
     connect_nodes(nodes)
-    Regbench.Benchmark.Init.run(benchmark_mod)
+    Regbench.Phases.Init.run(benchmark_mod)
 
     {upper_key, pid_infos} = launch_processes(benchmark_mod, process_count)
 

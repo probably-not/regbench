@@ -1,4 +1,4 @@
-defmodule Regbench.Benchmark.Init do
+defmodule Regbench.Phases.Init do
   def run(benchmark_mod) do
     nodes = [node() | Node.list()]
 
