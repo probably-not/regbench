@@ -10,13 +10,15 @@ defmodule Regbench.Registries.PG do
       pid = self()
 
       Node.spawn(node, fn ->
-        {:ok, _} = :pg.start_link()
-        send(pid, {:ok, ref})
+        {:ok, pgpid} = :pg.start_link()
+        Process.unlink(pgpid)
+        send(pid, {:ok, ref, pgpid})
       end)
 
       receive do
-        {:ok, ^ref} ->
+        {:ok, ^ref, pgpid} ->
           IO.puts("Initialized #{__MODULE__} on #{inspect(node)}")
+          Process.link(pgpid)
       end
     end)
   end

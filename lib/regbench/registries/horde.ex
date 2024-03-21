@@ -10,16 +10,15 @@ defmodule Regbench.Registries.Horde do
       pid = self()
 
       Node.spawn(node, fn ->
-        # TODO: Fix Horde
-        # For some reason, even though Horde's registry is started, the ETS tables seem to be not started correctly...
-        # There's probably something strange going on there.
-        {:ok, _} = Horde.Registry.start_link(keys: :unique, name: __MODULE__, members: nodes)
-        send(pid, {:ok, ref})
+        {:ok, hpid} = Horde.Registry.start_link(keys: :unique, name: __MODULE__, members: nodes)
+        Process.unlink(hpid)
+        send(pid, {:ok, ref, hpid})
       end)
 
       receive do
-        {:ok, ^ref} ->
+        {:ok, ^ref, hpid} ->
           IO.puts("Initialized #{__MODULE__} on #{inspect(node)}")
+          Process.link(hpid)
       end
     end)
   end

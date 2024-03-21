@@ -6,7 +6,25 @@ defmodule Regbench.Registries.Elixir do
       raise "The Elixir Registry is a local only registry"
     end
 
-    {:ok, _} = Registry.start_link(keys: :unique, name: __MODULE__)
+    nodes = [node()]
+
+    nodes
+    |> Enum.each(fn node ->
+      ref = make_ref()
+      pid = self()
+
+      Node.spawn(node, fn ->
+        {:ok, rpid} = Registry.start_link(keys: :unique, name: __MODULE__)
+        Process.unlink(rpid)
+        send(pid, {:ok, ref, rpid})
+      end)
+
+      receive do
+        {:ok, ^ref, rpid} ->
+          IO.puts("Initialized #{__MODULE__} on #{inspect(node)}")
+          Process.link(rpid)
+      end
+    end)
   end
 
   def register(key, pid) do
