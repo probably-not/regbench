@@ -3,6 +3,9 @@ defmodule Regbench.Benchmark do
   A behaviour for a Process Registry benchmark.
   """
 
+  @typedoc "A module implementing the Regbench.Benchmark behaviour."
+  @type t() :: module()
+
   @callback distributed?() :: boolean()
   @callback init(nodes :: list(node())) :: :ok | {:ok, pid()} | pid()
   @callback register(key :: String.t(), pid()) :: term()

@@ -6,7 +6,7 @@ defmodule Regbench do
   @max_retrieve_waiting_time 60_000
 
   def start(benchmark_mod, process_count, nodes) do
-    connect_nodes(nodes)
+    Regbench.Phases.Connect.run(nodes)
     Regbench.Phases.Init.run(benchmark_mod)
 
     {upper_key, pid_infos} = launch_processes(benchmark_mod, process_count)
@@ -47,10 +47,6 @@ defmodule Regbench do
     {retrieved_in_ms_4, retrieve_process_4} = retrieve(:undefined, benchmark_mod, upper_key)
     IO.puts("Check that process with Key #{upper_key} was NOT found:")
     IO.puts("#{inspect(retrieve_process_4)} in #{retrieved_in_ms_4} ms")
-  end
-
-  def connect_nodes(nodes) do
-    Enum.each(nodes, fn node -> true = Node.connect(node) end)
   end
 
   def launch_processes(benchmark_mod, process_count) do

@@ -1,4 +1,5 @@
 defmodule Regbench.Phases.Init do
+  @spec run(benchmark_mod :: Regbench.Benchmark.t()) :: :ok
   def run(benchmark_mod) do
     nodes = [node() | Node.list()]
 
