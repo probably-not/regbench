@@ -1,8 +1,14 @@
 defmodule Regbench.Phases.Connect do
-  # TODO: Right now we are manually connecting, but I think it may be better to just delegate this to Libcluster.
-  # Libcluster can give us different strategies, so that in different environments we can cluster in different ways.
-  # For example, locally, we can cluster based on gossip, or by a static list of nodes, and when we run a full benchmark,
-  # we can cluster based on DNS based strategies.
+  @moduledoc ~S"""
+  Regbench.Phases.Connect is the first stage of the benchmark, used to connect all of the given nodes to run the benchmark on.
+
+  This currently runs a very simple `Node.connect/1` call for each node given in the list, expecting the output of `true` to make sure
+  that the nodes all properly connect.
+
+  A future iteration may use a better clustering methodology, such as delegating to the Libcluster or DNSCluster packages.
+  """
+
+  @doc false
   @spec run(nodes :: list(node())) :: :ok
   def run(nodes) do
     Enum.each(nodes, fn node ->
