@@ -3,13 +3,15 @@ defmodule Regbench do
   A behaviour for a Process Registry benchmark.
   """
 
+  alias Regbench.Phases
+
   @max_retrieve_waiting_time 60_000
 
   def start(benchmark_mod, process_count, nodes) do
-    Regbench.Phases.Connect.run(nodes)
-    Regbench.Phases.Init.run(benchmark_mod)
+    Phases.Connect.run(nodes)
+    Phases.Init.run(benchmark_mod)
 
-    {upper_key, pid_infos} = launch_processes(benchmark_mod, process_count)
+    {upper_key, pid_infos} = Phases.Launch.run(benchmark_mod, process_count)
 
     # Benchmark: register
     {time_register, _} = :timer.tc(__MODULE__, :register, [benchmark_mod, pid_infos])
@@ -47,27 +49,6 @@ defmodule Regbench do
     {retrieved_in_ms_4, retrieve_process_4} = retrieve(:undefined, benchmark_mod, upper_key)
     IO.puts("Check that process with Key #{upper_key} was NOT found:")
     IO.puts("#{inspect(retrieve_process_4)} in #{retrieved_in_ms_4} ms")
-  end
-
-  def launch_processes(benchmark_mod, process_count) do
-    nodes = [node() | Node.list()]
-    processes_per_node = round(process_count / length(nodes))
-    upper_key = Integer.to_string(processes_per_node * length(nodes))
-
-    node_procs =
-      Enum.reduce(nodes, [], fn node, acc ->
-        starting_key = length(acc) * processes_per_node
-        pids = launch_processes_on_node(benchmark_mod, processes_per_node, starting_key, node)
-        [{node, pids} | acc]
-      end)
-
-    {upper_key, node_procs}
-  end
-
-  def launch_processes_on_node(benchmark_mod, processes_per_node, starting_key, node) do
-    (starting_key + 1)..(starting_key + processes_per_node)
-    |> Enum.map(&Integer.to_string(&1))
-    |> Enum.map(fn key -> {key, Node.spawn(node, benchmark_mod, :process_loop, [])} end)
   end
 
   def register(benchmark_mod, pid_infos) do
