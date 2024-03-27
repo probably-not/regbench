@@ -18,11 +18,12 @@ defmodule Regbench.Phases.Launch do
   all processes are started and alive.
   """
 
-  @type node_pids :: {node(), list(pid())}
+  @type pid_info :: {String.t(), pid()}
+  @type node_pid_infos :: {node(), list(pid_info())}
 
   @doc false
   @spec run(benchmark_mod :: Regbench.Benchmark.t(), process_count :: non_neg_integer()) ::
-          {String.t(), list(node_pids())}
+          {String.t(), list(node_pid_infos())}
   def run(benchmark_mod, process_count) do
     nodes = [node() | Node.list()]
     processes_per_node = round(process_count / length(nodes))
@@ -31,23 +32,15 @@ defmodule Regbench.Phases.Launch do
     all_node_pids =
       Enum.reduce(nodes, [], fn node, acc ->
         starting_key = length(acc) * processes_per_node
-        pids = launch_processes_on_node(node, benchmark_mod, processes_per_node, starting_key)
+
+        pids =
+          (starting_key + 1)..(starting_key + processes_per_node)
+          |> Enum.map(&Integer.to_string(&1))
+          |> Enum.map(fn key -> {key, Node.spawn(node, &benchmark_mod.process_loop/0)} end)
+
         [{node, pids} | acc]
       end)
 
     {upper_key, all_node_pids}
-  end
-
-  @doc false
-  @spec launch_processes_on_node(
-          node :: node(),
-          benchmark_mod :: Regbench.Benchmark.t(),
-          processes_per_node :: non_neg_integer(),
-          starting_key :: non_neg_integer()
-        ) :: list(pid())
-  defp launch_processes_on_node(node, benchmark_mod, processes_per_node, starting_key) do
-    (starting_key + 1)..(starting_key + processes_per_node)
-    |> Enum.map(&Integer.to_string(&1))
-    |> Enum.map(fn key -> {key, Node.spawn(node, benchmark_mod, :process_loop, [])} end)
   end
 end
