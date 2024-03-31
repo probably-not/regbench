@@ -17,6 +17,7 @@ defmodule Regbench.Phases.Registration do
     nodes_pid_infos
     |> Task.async_stream(
       fn {node, node_pid_infos} ->
+        ref = make_ref()
         tpid = self()
 
         Node.spawn(node, fn ->
@@ -24,11 +25,11 @@ defmodule Regbench.Phases.Registration do
             benchmark_mod.register(key, npid)
           end
 
-          send(tpid, {:registered, length(node_pid_infos)})
+          send(tpid, {:registered, ref, length(node_pid_infos)})
         end)
 
         receive do
-          {:registered, count} ->
+          {:registered, ^ref, count} ->
             IO.puts("Registered #{count} processes on node #{node}")
         end
 
