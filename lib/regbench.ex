@@ -14,7 +14,7 @@ defmodule Regbench do
     {upper_key, pid_infos} = Phases.Launch.run(benchmark_mod, process_count)
 
     # Benchmark: register
-    {time_register, _} = :timer.tc(__MODULE__, :register, [benchmark_mod, pid_infos])
+    {time_register, _} = :timer.tc(Regbench.Phases.Registration, :run, [benchmark_mod, pid_infos])
     IO.puts("Registered processes in: #{time_register / 1_000_000} sec")
     IO.puts("Registered processes rate: #{process_count / time_register * 1_000_000}/sec")
 
@@ -34,7 +34,9 @@ defmodule Regbench do
     IO.puts("#{inspect(retrieve_process_2)} in #{retrieved_in_ms_2} ms")
 
     # Benchmark: re-registering
-    {time_reregister, _} = :timer.tc(__MODULE__, :register, [benchmark_mod, pid_infos])
+    {time_reregister, _} =
+      :timer.tc(Regbench.Phases.Registration, :run, [benchmark_mod, pid_infos])
+
     IO.puts("Re-registered processes in: #{time_reregister / 1_000_000} sec")
     IO.puts("Re-registered processes rate: #{process_count / time_reregister * 1_000_000}/sec")
 
@@ -49,28 +51,6 @@ defmodule Regbench do
     {retrieved_in_ms_4, retrieve_process_4} = retrieve(:undefined, benchmark_mod, upper_key)
     IO.puts("Check that process with Key #{upper_key} was NOT found:")
     IO.puts("#{inspect(retrieve_process_4)} in #{retrieved_in_ms_4} ms")
-  end
-
-  def register(benchmark_mod, pid_infos) do
-    Enum.reduce(pid_infos, [], fn {node, node_pid_infos}, acc ->
-      rpc_key =
-        :rpc.async_call(node, __MODULE__, :register_on_node, [benchmark_mod, node_pid_infos])
-
-      [{node, rpc_key} | acc]
-    end)
-    |> Enum.each(fn {node, rpc_key} ->
-      registered = :rpc.yield(rpc_key)
-      IO.puts("Registered #{registered} processes on node #{node}")
-    end)
-  end
-
-  def register_on_node(benchmark_mod, node_pid_infos) do
-    node_pid_infos
-    |> Enum.each(fn {key, pid} ->
-      benchmark_mod.register(key, pid)
-    end)
-
-    length(node_pid_infos)
   end
 
   def retrieve(expected, benchmark_mod, key) do
