@@ -36,6 +36,10 @@ defmodule Regbench.Phases.Init do
           bpid when is_pid(bpid) ->
             Process.unlink(bpid)
             send(pid, {:ok, ref, bpid})
+
+          {:error, {:already_started, bpid}} ->
+            Process.unlink(bpid)
+            send(pid, {:ok, ref, bpid})
         end
       end)
 
