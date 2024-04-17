@@ -8,13 +8,11 @@ defmodule Regbench.Phases.Registration do
   propagate to the nodes.
   """
 
-  @type seconds_taken :: float()
-
   @doc false
   @spec run(
           benchmark_mod :: Regbench.Benchmark.t(),
           node_pid_infos :: list(Regbench.Phases.Launch.node_pid_infos())
-        ) :: seconds_taken
+        ) :: Regbench.Types.seconds_taken()
   def run(benchmark_mod, nodes_pid_infos) do
     start_time = System.monotonic_time()
 
