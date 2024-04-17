@@ -5,8 +5,6 @@ defmodule Regbench do
 
   alias Regbench.Phases
 
-  @max_retrieve_waiting_time 60_000
-
   def start(benchmark_mod, process_count, nodes) do
     :ok = Phases.Connect.run(nodes)
     :ok = Phases.Init.run(benchmark_mod)
@@ -14,85 +12,82 @@ defmodule Regbench do
     {upper_key, pid_infos} = Phases.Launch.run(benchmark_mod, process_count)
 
     # Benchmark: register
-    time_register = Regbench.Phases.Registration.run(benchmark_mod, pid_infos)
+    time_register = Phases.Registration.run(benchmark_mod, pid_infos)
     IO.puts("Registered processes in: #{time_register} sec")
     IO.puts("Registered processes rate: #{process_count / time_register}/sec")
 
     # Benchmark: registration propogation
-    {retrieved_in_ms_1, retrieve_process_1} = retrieve(:pid, benchmark_mod, upper_key)
-    IO.puts("Check that process with Key #{upper_key} was found:")
-    IO.puts("#{inspect(retrieve_process_1)} in #{retrieved_in_ms_1} ms")
+    case Phases.PropagationRetrieval.run(upper_key, benchmark_mod, :registration) do
+      {:error, :timeout_during_retrieve} ->
+        IO.puts("Timed out waiting for registration propagation for #{upper_key}")
+
+      {:error, error} ->
+        IO.puts(
+          "Error #{inspect(error)} while waiting for registration propagation for #{upper_key}"
+        )
+
+      {retrieved_in_ms, retrieved_pid} ->
+        IO.puts("Check that process with Key #{upper_key} was found:")
+        IO.puts("#{inspect(retrieved_pid)} in #{retrieved_in_ms} ms")
+    end
 
     # Benchmark: unregister
     {time_unregister, _} = :timer.tc(__MODULE__, :unregister, [benchmark_mod, pid_infos])
     IO.puts("Unregistered processes in: #{time_unregister / 1_000_000} sec")
     IO.puts("Unregistered processes rate: #{process_count / time_unregister * 1_000_000}/sec")
 
-    # Benchmark: unregistration propogation
-    {retrieved_in_ms_2, retrieve_process_2} = retrieve(:undefined, benchmark_mod, upper_key)
-    IO.puts("Check that process with Key #{upper_key} was NOT found:")
-    IO.puts("#{inspect(retrieve_process_2)} in #{retrieved_in_ms_2} ms")
+    # Benchmark: deregistration propogation
+    case Phases.PropagationRetrieval.run(upper_key, benchmark_mod, :deregistration) do
+      {:error, :timeout_during_retrieve} ->
+        IO.puts("Timed out waiting for deregistration propagation for #{upper_key}")
+
+      {:error, error} ->
+        IO.puts(
+          "Error #{inspect(error)} while waiting for deregistration propagation for #{upper_key}"
+        )
+
+      {retrieved_in_ms, retrieved_pid} ->
+        IO.puts("Check that process with Key #{upper_key} was NOT found:")
+        IO.puts("#{inspect(retrieved_pid)} in #{retrieved_in_ms} ms")
+    end
 
     # Benchmark: re-registering
-    time_reregister = Regbench.Phases.Registration.run(benchmark_mod, pid_infos)
+    time_reregister = Phases.Registration.run(benchmark_mod, pid_infos)
     IO.puts("Re-registered processes in: #{time_reregister} sec")
     IO.puts("Re-registered processes rate: #{process_count / time_reregister}/sec")
 
     # Benchmark: re-registration propogation
-    {retrieved_in_ms_3, retrieve_process_3} = retrieve(:pid, benchmark_mod, upper_key)
-    IO.puts("Check that process with Key #{upper_key} was found:")
-    IO.puts("#{inspect(retrieve_process_3)} in #{retrieved_in_ms_3} ms")
+    case Phases.PropagationRetrieval.run(upper_key, benchmark_mod, :registration) do
+      {:error, :timeout_during_retrieve} ->
+        IO.puts("Timed out waiting for registration propagation for #{upper_key}")
+
+      {:error, error} ->
+        IO.puts(
+          "Error #{inspect(error)} while waiting for registration propagation for #{upper_key}"
+        )
+
+      {retrieved_in_ms, retrieved_pid} ->
+        IO.puts("Check that process with Key #{upper_key} was found:")
+        IO.puts("#{inspect(retrieved_pid)} in #{retrieved_in_ms} ms")
+    end
 
     # Benchmark: monitoring
     IO.puts("Kill all processes")
     kill_processes(pid_infos)
-    {retrieved_in_ms_4, retrieve_process_4} = retrieve(:undefined, benchmark_mod, upper_key)
-    IO.puts("Check that process with Key #{upper_key} was NOT found:")
-    IO.puts("#{inspect(retrieve_process_4)} in #{retrieved_in_ms_4} ms")
-  end
 
-  def retrieve(expected, benchmark_mod, key) do
-    start_time = epoch_time_ms()
-    retrieve(expected, benchmark_mod, key, start_time)
-  end
-
-  def retrieve(:undefined, benchmark_mod, key, start_time) do
-    case benchmark_mod.retrieve(key) do
-      :undefined ->
-        retrieved_in_ms = epoch_time_ms() - start_time
-        {retrieved_in_ms, :undefined}
+    # Benchmark: deregistration after re-registration propogation
+    case Phases.PropagationRetrieval.run(upper_key, benchmark_mod, :deregistration) do
+      {:error, :timeout_during_retrieve} ->
+        IO.puts("Timed out waiting for deregistration propagation for #{upper_key}")
 
       {:error, error} ->
-        {:error, error}
+        IO.puts(
+          "Error #{inspect(error)} while waiting for deregistration propagation for #{upper_key}"
+        )
 
-      _pid ->
-        Process.sleep(50)
-
-        if epoch_time_ms() > start_time + @max_retrieve_waiting_time do
-          {:error, :timeout_during_retrieve}
-        else
-          retrieve(:undefined, benchmark_mod, key, start_time)
-        end
-    end
-  end
-
-  def retrieve(:pid, benchmark_mod, key, start_time) do
-    case benchmark_mod.retrieve(key) do
-      :undefined ->
-        Process.sleep(50)
-
-        if epoch_time_ms() > start_time + @max_retrieve_waiting_time do
-          {:error, :timeout_during_retrieve}
-        else
-          retrieve(:pid, benchmark_mod, key, start_time)
-        end
-
-      {:error, error} ->
-        {:error, error}
-
-      pid ->
-        retrieved_in_ms = epoch_time_ms() - start_time
-        {retrieved_in_ms, pid}
+      {retrieved_in_ms, retrieved_pid} ->
+        IO.puts("Check that process with Key #{upper_key} was NOT found:")
+        IO.puts("#{inspect(retrieved_pid)} in #{retrieved_in_ms} ms")
     end
   end
 
@@ -120,10 +115,5 @@ defmodule Regbench do
     pid_infos
     |> Enum.flat_map(fn {_node, node_pid_infos} -> node_pid_infos end)
     |> Enum.each(fn {_key, pid} -> Process.exit(pid, :kill) end)
-  end
-
-  def epoch_time_ms() do
-    {mega, sec, micro} = :os.timestamp()
-    (mega * 1_000_000 + sec) * 1000 + round(micro / 1000)
   end
 end

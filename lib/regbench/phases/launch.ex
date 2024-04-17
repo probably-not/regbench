@@ -18,12 +18,13 @@ defmodule Regbench.Phases.Launch do
   all processes are started and alive.
   """
 
-  @type pid_info :: {String.t(), pid()}
+  @type registration_key :: String.t()
+  @type pid_info :: {registration_key(), pid()}
   @type node_pid_infos :: {node(), list(pid_info())}
 
   @doc false
   @spec run(benchmark_mod :: Regbench.Benchmark.t(), process_count :: non_neg_integer()) ::
-          {String.t(), list(node_pid_infos())}
+          {registration_key(), list(node_pid_infos())}
   def run(benchmark_mod, process_count) do
     nodes = [node() | Node.list()]
     processes_per_node = round(process_count / length(nodes))
