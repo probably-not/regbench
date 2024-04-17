@@ -11,7 +11,7 @@ defmodule Regbench.Registries.Horde do
     {:ok, _} = Horde.Registry.register(__MODULE__, key, pid)
   end
 
-  def unregister(key, _pid) do
+  def deregister(key, _pid) do
     :ok = Horde.Registry.unregister(__MODULE__, key)
   end
 

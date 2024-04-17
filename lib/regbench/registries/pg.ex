@@ -13,7 +13,7 @@ defmodule Regbench.Registries.PG do
     :ok = :pg.join(key, pid)
   end
 
-  def unregister(key, pid) do
+  def deregister(key, pid) do
     :ok = :pg.leave(key, pid)
   end
 

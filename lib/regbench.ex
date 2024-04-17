@@ -31,10 +31,10 @@ defmodule Regbench do
         IO.puts("#{inspect(retrieved_pid)} in #{retrieved_in_ms} ms")
     end
 
-    # Benchmark: unregister
-    {time_unregister, _} = :timer.tc(__MODULE__, :unregister, [benchmark_mod, pid_infos])
-    IO.puts("Unregistered processes in: #{time_unregister / 1_000_000} sec")
-    IO.puts("Unregistered processes rate: #{process_count / time_unregister * 1_000_000}/sec")
+    # Benchmark: deregister
+    time_deregister = Phases.Deregistration.run(benchmark_mod, pid_infos)
+    IO.puts("Deregistered processes in: #{time_deregister} sec")
+    IO.puts("Deregistered processes rate: #{process_count / time_deregister}/sec")
 
     # Benchmark: deregistration propogation
     case Phases.PropagationRetrieval.run(upper_key, benchmark_mod, :deregistration) do
@@ -71,7 +71,7 @@ defmodule Regbench do
         IO.puts("#{inspect(retrieved_pid)} in #{retrieved_in_ms} ms")
     end
 
-    # Benchmark: monitoring
+    # Benchmark: propagation of deregistration based on monitoring of processes
     IO.puts("Kill all processes")
     kill_processes(pid_infos)
 
@@ -89,26 +89,6 @@ defmodule Regbench do
         IO.puts("Check that process with Key #{upper_key} was NOT found:")
         IO.puts("#{inspect(retrieved_pid)} in #{retrieved_in_ms} ms")
     end
-  end
-
-  def unregister(benchmark_mod, pid_infos) do
-    Enum.reduce(pid_infos, [], fn {node, node_pid_infos}, acc ->
-      rpc_key =
-        :rpc.async_call(node, __MODULE__, :unregister_on_node, [benchmark_mod, node_pid_infos])
-
-      [{node, rpc_key} | acc]
-    end)
-    |> Enum.each(fn {node, rpc_key} ->
-      unregistered = :rpc.yield(rpc_key)
-      IO.puts("Unregistered #{unregistered} processes on node #{node}")
-    end)
-  end
-
-  def unregister_on_node(benchmark_mod, node_pid_infos) do
-    node_pid_infos
-    |> Enum.each(fn {key, pid} -> benchmark_mod.unregister(key, pid) end)
-
-    length(node_pid_infos)
   end
 
   def kill_processes(pid_infos) do

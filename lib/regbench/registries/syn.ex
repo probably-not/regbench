@@ -13,7 +13,7 @@ defmodule Regbench.Registries.Syn do
     :ok = :syn.register(:registry, key, pid)
   end
 
-  def unregister(key, _pid) do
+  def deregister(key, _pid) do
     :syn.unregister(:registry, key)
   end
 

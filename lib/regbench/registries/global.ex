@@ -11,7 +11,7 @@ defmodule Regbench.Registries.Global do
     :yes = :global.register_name(key, pid)
   end
 
-  def unregister(key, _pid) do
+  def deregister(key, _pid) do
     :global.unregister_name(key)
   end
 

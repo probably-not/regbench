@@ -9,7 +9,7 @@ defmodule Regbench.Benchmark do
   @callback distributed?() :: boolean()
   @callback init(nodes :: list(node())) :: :ok | {:ok, pid()} | pid()
   @callback register(key :: String.t(), pid()) :: term()
-  @callback unregister(key :: String.t(), pid()) :: term()
+  @callback deregister(key :: String.t(), pid()) :: term()
   @callback retrieve(key :: String.t()) :: pid() | :undefined
   @callback process_loop() :: any()
 
