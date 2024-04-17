@@ -8,12 +8,16 @@ defmodule Regbench.Phases.Registration do
   propagate to the nodes.
   """
 
+  @type seconds_taken :: float()
+
   @doc false
   @spec run(
           benchmark_mod :: Regbench.Benchmark.t(),
           node_pid_infos :: list(Regbench.Phases.Launch.node_pid_infos())
-        ) :: :ok
+        ) :: seconds_taken
   def run(benchmark_mod, nodes_pid_infos) do
+    start_time = System.monotonic_time()
+
     nodes_pid_infos
     |> Task.async_stream(
       fn {node, node_pid_infos} ->
@@ -38,5 +42,9 @@ defmodule Regbench.Phases.Registration do
       ordered: false
     )
     |> Stream.run()
+
+    end_time = System.monotonic_time()
+    nano = System.convert_time_unit(end_time - start_time, :native, :nanosecond)
+    nano / 1_000_000_000
   end
 end

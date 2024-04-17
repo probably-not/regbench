@@ -8,15 +8,15 @@ defmodule Regbench do
   @max_retrieve_waiting_time 60_000
 
   def start(benchmark_mod, process_count, nodes) do
-    Phases.Connect.run(nodes)
-    Phases.Init.run(benchmark_mod)
+    :ok = Phases.Connect.run(nodes)
+    :ok = Phases.Init.run(benchmark_mod)
 
     {upper_key, pid_infos} = Phases.Launch.run(benchmark_mod, process_count)
 
     # Benchmark: register
-    {time_register, _} = :timer.tc(Regbench.Phases.Registration, :run, [benchmark_mod, pid_infos])
-    IO.puts("Registered processes in: #{time_register / 1_000_000} sec")
-    IO.puts("Registered processes rate: #{process_count / time_register * 1_000_000}/sec")
+    time_register = Regbench.Phases.Registration.run(benchmark_mod, pid_infos)
+    IO.puts("Registered processes in: #{time_register} sec")
+    IO.puts("Registered processes rate: #{process_count / time_register}/sec")
 
     # Benchmark: registration propogation
     {retrieved_in_ms_1, retrieve_process_1} = retrieve(:pid, benchmark_mod, upper_key)
@@ -34,11 +34,9 @@ defmodule Regbench do
     IO.puts("#{inspect(retrieve_process_2)} in #{retrieved_in_ms_2} ms")
 
     # Benchmark: re-registering
-    {time_reregister, _} =
-      :timer.tc(Regbench.Phases.Registration, :run, [benchmark_mod, pid_infos])
-
-    IO.puts("Re-registered processes in: #{time_reregister / 1_000_000} sec")
-    IO.puts("Re-registered processes rate: #{process_count / time_reregister * 1_000_000}/sec")
+    time_reregister = Regbench.Phases.Registration.run(benchmark_mod, pid_infos)
+    IO.puts("Re-registered processes in: #{time_reregister} sec")
+    IO.puts("Re-registered processes rate: #{process_count / time_reregister}/sec")
 
     # Benchmark: re-registration propogation
     {retrieved_in_ms_3, retrieve_process_3} = retrieve(:pid, benchmark_mod, upper_key)
