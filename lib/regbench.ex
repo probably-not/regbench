@@ -73,7 +73,7 @@ defmodule Regbench do
 
     # Benchmark: propagation of deregistration based on monitoring of processes
     IO.puts("Kill all processes")
-    kill_processes(pid_infos)
+    Phases.Kill.run(pid_infos)
 
     # Benchmark: deregistration after re-registration propogation
     case Phases.PropagationRetrieval.run(upper_key, benchmark_mod, :deregistration) do
@@ -89,11 +89,5 @@ defmodule Regbench do
         IO.puts("Check that process with Key #{upper_key} was NOT found:")
         IO.puts("#{inspect(retrieved_pid)} in #{retrieved_in_ms} ms")
     end
-  end
-
-  def kill_processes(pid_infos) do
-    pid_infos
-    |> Enum.flat_map(fn {_node, node_pid_infos} -> node_pid_infos end)
-    |> Enum.each(fn {_key, pid} -> Process.exit(pid, :kill) end)
   end
 end
