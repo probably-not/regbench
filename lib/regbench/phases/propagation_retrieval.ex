@@ -19,14 +19,19 @@ defmodule Regbench.Phases.PropagationRetrieval do
   @type step :: :registration | :deregistration
 
   @doc false
-  @spec run(
-          key :: Regbench.Phases.Launch.registration_key(),
-          benchmark_mod :: Regbench.Benchmark.t(),
-          step :: step()
-        ) :: {non_neg_integer(), pid()} | {:error, :timeout_during_retrieve | term()}
-  def run(key, benchmark_mod, step) do
+  @spec run(state :: Regbench.State.t(), step :: step(), key :: atom()) :: Regbench.State.t()
+  def run(%Regbench.State{} = state, step, key) when is_atom(step) and is_atom(key) do
     start_time = epoch_time_ms()
-    retrieval(key, benchmark_mod, start_time, step)
+
+    case retrieval(state.upper_key, state.benchmark_mod, start_time, step) do
+      {:error, :timeout_during_retrieve} ->
+        timed = %Regbench.Result.Timed{timed_out: true}
+        %Regbench.State{state | result: Map.put(state.result, key, timed)}
+
+      {retrieved_in_ms, _retrieved_pid} ->
+        timed = %Regbench.Result.Timed{milliseconds: retrieved_in_ms}
+        %Regbench.State{state | result: Map.put(state.result, key, timed)}
+    end
   end
 
   @spec retrieval(
@@ -46,9 +51,6 @@ defmodule Regbench.Phases.PropagationRetrieval do
           retrieval(key, benchmark_mod, key, :registration)
         end
 
-      {:error, error} ->
-        {:error, error}
-
       pid ->
         retrieved_in_ms = epoch_time_ms() - start_time
         {retrieved_in_ms, pid}
@@ -60,9 +62,6 @@ defmodule Regbench.Phases.PropagationRetrieval do
       :undefined ->
         retrieved_in_ms = epoch_time_ms() - start_time
         {retrieved_in_ms, :undefined}
-
-      {:error, error} ->
-        {:error, error}
 
       _pid ->
         Process.sleep(@wait_time)

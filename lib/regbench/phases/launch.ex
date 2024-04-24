@@ -18,30 +18,24 @@ defmodule Regbench.Phases.Launch do
   all processes are started and alive.
   """
 
-  @type registration_key :: String.t()
-  @type pid_info :: {registration_key(), pid()}
-  @type node_pid_infos :: {node(), list(pid_info())}
-
   @doc false
-  @spec run(benchmark_mod :: Regbench.Benchmark.t(), process_count :: non_neg_integer()) ::
-          {registration_key(), list(node_pid_infos())}
-  def run(benchmark_mod, process_count) do
-    nodes = [node() | Node.list()]
-    processes_per_node = round(process_count / length(nodes))
-    upper_key = Integer.to_string(processes_per_node * length(nodes))
+  @spec run(state :: Regbench.State.t()) :: Regbench.State.t()
+  def run(%Regbench.State{} = state) do
+    processes_per_node = round(state.process_count / length(state.nodes))
+    upper_key = Integer.to_string(processes_per_node * length(state.nodes))
 
     all_node_pids =
-      Enum.reduce(nodes, [], fn node, acc ->
+      Enum.reduce(state.nodes, [], fn node, acc ->
         starting_key = length(acc) * processes_per_node
 
         pids =
           (starting_key + 1)..(starting_key + processes_per_node)
           |> Enum.map(&Integer.to_string(&1))
-          |> Enum.map(fn key -> {key, Node.spawn(node, &benchmark_mod.process_loop/0)} end)
+          |> Enum.map(fn key -> {key, Node.spawn(node, &state.benchmark_mod.process_loop/0)} end)
 
         [{node, pids} | acc]
       end)
 
-    {upper_key, all_node_pids}
+    %Regbench.State{state | upper_key: upper_key, nodes_pid_infos: all_node_pids}
   end
 end

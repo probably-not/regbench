@@ -9,14 +9,11 @@ defmodule Regbench.Phases.Registration do
   """
 
   @doc false
-  @spec run(
-          benchmark_mod :: Regbench.Benchmark.t(),
-          node_pid_infos :: list(Regbench.Phases.Launch.node_pid_infos())
-        ) :: Regbench.Types.seconds_taken()
-  def run(benchmark_mod, nodes_pid_infos) do
+  @spec run(state :: Regbench.State.t(), key :: atom()) :: Regbench.State.t()
+  def run(%Regbench.State{} = state, key) when is_atom(key) do
     start_time = System.monotonic_time()
 
-    nodes_pid_infos
+    state.nodes_pid_infos
     |> Task.async_stream(
       fn {node, node_pid_infos} ->
         ref = make_ref()
@@ -24,7 +21,7 @@ defmodule Regbench.Phases.Registration do
 
         Node.spawn(node, fn ->
           for {key, npid} <- node_pid_infos do
-            benchmark_mod.register(key, npid)
+            state.benchmark_mod.register(key, npid)
           end
 
           send(tpid, {:registered, ref, length(node_pid_infos)})
@@ -43,6 +40,8 @@ defmodule Regbench.Phases.Registration do
 
     end_time = System.monotonic_time()
     nano = System.convert_time_unit(end_time - start_time, :native, :nanosecond)
-    nano / 1_000_000_000
+
+    timed = %Regbench.Result.Timed{nanoseconds: nano}
+    %Regbench.State{state | result: Map.put(state.result, key, timed)}
   end
 end

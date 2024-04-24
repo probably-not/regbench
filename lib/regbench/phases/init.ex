@@ -12,20 +12,18 @@ defmodule Regbench.Phases.Init do
   """
 
   @doc false
-  @spec run(benchmark_mod :: Regbench.Benchmark.t()) :: :ok
-  def run(benchmark_mod) do
-    nodes = [node() | Node.list()]
+  @spec run(state :: Regbench.State.t()) :: Regbench.State.t()
+  def run(%Regbench.State{} = state) do
+    if not state.benchmark_mod.distributed?() and length(state.nodes) > 1,
+      do: raise("The #{state.benchmark_mod} Registry is a local only registry")
 
-    if not benchmark_mod.distributed?() and length(nodes) > 1,
-      do: raise("The #{benchmark_mod} Registry is a local only registry")
-
-    nodes
+    state.nodes
     |> Enum.each(fn node ->
       ref = make_ref()
       pid = self()
 
       Node.spawn(node, fn ->
-        case benchmark_mod.init(nodes) do
+        case state.benchmark_mod.init(state.nodes) do
           :ok ->
             send(pid, {:ok, ref})
 
@@ -51,7 +49,9 @@ defmodule Regbench.Phases.Init do
           Process.link(bpid)
       end
 
-      IO.puts("Initialized #{benchmark_mod} on #{inspect(node)}")
+      IO.puts("Initialized #{state.benchmark_mod} on #{inspect(node)}")
     end)
+
+    state
   end
 end

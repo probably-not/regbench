@@ -6,88 +6,74 @@ defmodule Regbench do
   alias Regbench.Phases
 
   def start(benchmark_mod, process_count, nodes) do
-    :ok = Phases.Connect.run(nodes)
-    :ok = Phases.Init.run(benchmark_mod)
-
-    {upper_key, pid_infos} = Phases.Launch.run(benchmark_mod, process_count)
-
-    # Benchmark: register
-    time_register = Phases.Registration.run(benchmark_mod, pid_infos)
-    IO.puts("Registered processes in: #{time_register} sec")
-    IO.puts("Registered processes rate: #{process_count / time_register}/sec")
-
-    # Benchmark: registration propogation
-    case Phases.PropagationRetrieval.run(upper_key, benchmark_mod, :registration) do
-      {:error, :timeout_during_retrieve} ->
-        IO.puts("Timed out waiting for registration propagation for #{upper_key}")
-
-      {:error, error} ->
+    %Regbench.State{
+      benchmark_mod: benchmark_mod,
+      nodes_to_connect: nodes,
+      process_count: process_count,
+      result: %Regbench.Result{}
+    }
+    |> Phases.Connect.run()
+    |> Phases.Init.run()
+    |> Phases.Launch.run()
+    |> Phases.Registration.run(:registration)
+    |> tap(fn state ->
+      seconds = state.result.registration.nanoseconds / 1_000_000_000
+      IO.puts("Registered processes in: #{seconds} sec")
+      IO.puts("Registered processes rate: #{state.process_count / seconds}/sec")
+    end)
+    |> Phases.PropagationRetrieval.run(:registration, :registration_propagation)
+    |> tap(fn state ->
+      if state.result.registration_propagation.timed_out do
+        IO.puts("Timed out waiting for registration propagation for #{state.upper_key}")
+      else
         IO.puts(
-          "Error #{inspect(error)} while waiting for registration propagation for #{upper_key}"
+          "Process registration with key #{state.upper_key} propagated in #{state.result.registration_propagation.milliseconds} ms"
         )
-
-      {retrieved_in_ms, retrieved_pid} ->
-        IO.puts("Check that process with Key #{upper_key} was found:")
-        IO.puts("#{inspect(retrieved_pid)} in #{retrieved_in_ms} ms")
-    end
-
-    # Benchmark: deregister
-    time_deregister = Phases.Deregistration.run(benchmark_mod, pid_infos)
-    IO.puts("Deregistered processes in: #{time_deregister} sec")
-    IO.puts("Deregistered processes rate: #{process_count / time_deregister}/sec")
-
-    # Benchmark: deregistration propogation
-    case Phases.PropagationRetrieval.run(upper_key, benchmark_mod, :deregistration) do
-      {:error, :timeout_during_retrieve} ->
-        IO.puts("Timed out waiting for deregistration propagation for #{upper_key}")
-
-      {:error, error} ->
+      end
+    end)
+    |> Phases.Deregistration.run()
+    |> tap(fn state ->
+      seconds = state.result.deregistration.nanoseconds / 1_000_000_000
+      IO.puts("Deregistered processes in: #{seconds} sec")
+      IO.puts("Deregistered processes rate: #{state.process_count / seconds}/sec")
+    end)
+    |> Phases.PropagationRetrieval.run(:deregistration, :deregistration_propagation)
+    |> tap(fn state ->
+      if state.result.deregistration_propagation.timed_out do
+        IO.puts("Timed out waiting for deregistration propagation for #{state.upper_key}")
+      else
         IO.puts(
-          "Error #{inspect(error)} while waiting for deregistration propagation for #{upper_key}"
+          "Process deregistration with key #{state.upper_key} propagated in #{state.result.deregistration_propagation.milliseconds} ms"
         )
-
-      {retrieved_in_ms, retrieved_pid} ->
-        IO.puts("Check that process with Key #{upper_key} was NOT found:")
-        IO.puts("#{inspect(retrieved_pid)} in #{retrieved_in_ms} ms")
-    end
-
-    # Benchmark: re-registering
-    time_reregister = Phases.Registration.run(benchmark_mod, pid_infos)
-    IO.puts("Re-registered processes in: #{time_reregister} sec")
-    IO.puts("Re-registered processes rate: #{process_count / time_reregister}/sec")
-
-    # Benchmark: re-registration propogation
-    case Phases.PropagationRetrieval.run(upper_key, benchmark_mod, :registration) do
-      {:error, :timeout_during_retrieve} ->
-        IO.puts("Timed out waiting for registration propagation for #{upper_key}")
-
-      {:error, error} ->
+      end
+    end)
+    |> Phases.Registration.run(:reregistration)
+    |> tap(fn state ->
+      seconds = state.result.reregistration.nanoseconds / 1_000_000_000
+      IO.puts("Re-registered processes in: #{seconds} sec")
+      IO.puts("Re-registered processes rate: #{state.process_count / seconds}/sec")
+    end)
+    |> Phases.PropagationRetrieval.run(:registration, :reregistration_propagation)
+    |> tap(fn state ->
+      if state.result.reregistration_propagation.timed_out do
+        IO.puts("Timed out waiting for registration propagation for #{state.upper_key}")
+      else
         IO.puts(
-          "Error #{inspect(error)} while waiting for registration propagation for #{upper_key}"
+          "Process registration with key #{state.upper_key} propagated in #{state.result.reregistration_propagation.milliseconds} ms"
         )
-
-      {retrieved_in_ms, retrieved_pid} ->
-        IO.puts("Check that process with Key #{upper_key} was found:")
-        IO.puts("#{inspect(retrieved_pid)} in #{retrieved_in_ms} ms")
-    end
-
-    # Benchmark: propagation of deregistration based on monitoring of processes
-    IO.puts("Kill all processes")
-    Phases.Kill.run(pid_infos)
-
-    # Benchmark: deregistration after re-registration propogation
-    case Phases.PropagationRetrieval.run(upper_key, benchmark_mod, :deregistration) do
-      {:error, :timeout_during_retrieve} ->
-        IO.puts("Timed out waiting for deregistration propagation for #{upper_key}")
-
-      {:error, error} ->
+      end
+    end)
+    |> tap(fn _state -> IO.puts("Kill all processes") end)
+    |> Phases.Kill.run()
+    |> Phases.PropagationRetrieval.run(:deregistration, :killed_propagation)
+    |> tap(fn state ->
+      if state.result.killed_propagation.timed_out do
+        IO.puts("Timed out waiting for registration propagation for #{state.upper_key}")
+      else
         IO.puts(
-          "Error #{inspect(error)} while waiting for deregistration propagation for #{upper_key}"
+          "Process deregistration with key #{state.upper_key} propagated in #{state.result.killed_propagation.milliseconds} ms"
         )
-
-      {retrieved_in_ms, retrieved_pid} ->
-        IO.puts("Check that process with Key #{upper_key} was NOT found:")
-        IO.puts("#{inspect(retrieved_pid)} in #{retrieved_in_ms} ms")
-    end
+      end
+    end)
   end
 end

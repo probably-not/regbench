@@ -9,10 +9,12 @@ defmodule Regbench.Phases.Connect do
   """
 
   @doc false
-  @spec run(nodes :: list(node())) :: :ok
-  def run(nodes) do
-    Enum.each(nodes, fn node ->
+  @spec run(state :: Regbench.State.t()) :: Regbench.State.t()
+  def run(%Regbench.State{} = state) do
+    Enum.each(state.nodes_to_connect, fn node ->
       true = Node.connect(node)
     end)
+
+    %Regbench.State{state | nodes: [node() | Node.list()]}
   end
 end

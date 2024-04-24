@@ -6,10 +6,12 @@ defmodule Regbench.Phases.Kill do
   """
 
   @doc false
-  @spec run(node_pid_infos :: list(Regbench.Phases.Launch.node_pid_infos())) :: :ok
-  def run(nodes_pid_infos) do
-    nodes_pid_infos
+  @spec run(state :: Regbench.State.t()) :: Regbench.State.t()
+  def run(%Regbench.State{} = state) do
+    state.nodes_pid_infos
     |> Enum.flat_map(fn {_node, node_pid_infos} -> node_pid_infos end)
     |> Enum.each(fn {_key, pid} -> Process.exit(pid, :kill) end)
+
+    state
   end
 end
