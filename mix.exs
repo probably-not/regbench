@@ -29,7 +29,8 @@ defmodule Regbench.MixProject do
   defp deps do
     [
       {:syn, "~> 3.3"},
-      {:horde, "~> 0.9"}
+      {:horde, "~> 0.9"},
+      {:reginald, "~> 0.0.1-rc.0.0.3"}
     ]
   end
 
