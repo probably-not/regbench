@@ -23,10 +23,6 @@ defmodule Regbench.Result do
           killed_propagation: Regbench.Result.Timed.t() | nil
         }
 
-  # TODO: Create the full result struct.
-  # The Regbench.start function should return a result so we can store and track details.
-  # For example, we probably want to track different Elixir and OTP versions,
-  # along with different versions of the registries we are benchmarking.
   defstruct [
     :registration,
     :registration_propagation,
