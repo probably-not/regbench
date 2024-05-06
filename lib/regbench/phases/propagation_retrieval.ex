@@ -48,7 +48,7 @@ defmodule Regbench.Phases.PropagationRetrieval do
         if epoch_time_ms() > start_time + @max_retrieve_waiting_time do
           {:error, :timeout_during_retrieve}
         else
-          retrieval(key, benchmark_mod, key, :registration)
+          retrieval(key, benchmark_mod, start_time, :registration)
         end
 
       pid ->
