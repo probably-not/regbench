@@ -34,7 +34,8 @@ defmodule Regbench.Phases.Deregistration do
 
         nil
       end,
-      ordered: false
+      ordered: false,
+      timeout: 60_000
     )
     |> Stream.run()
 
