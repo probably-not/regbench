@@ -30,7 +30,7 @@ defmodule Regbench.MixProject do
     [
       {:syn, "~> 3.3"},
       {:horde, "~> 0.9"},
-      {:reginald, "~> 0.0.1-rc.0.0.5"}
+      {:reginald, "~> 0.0.2-rc.0.0.0"}
     ]
   end
 
