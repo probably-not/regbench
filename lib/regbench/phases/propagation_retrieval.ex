@@ -35,7 +35,7 @@ defmodule Regbench.Phases.PropagationRetrieval do
   end
 
   @spec retrieval(
-          key :: Regbench.Phases.Launch.registration_key(),
+          key :: Regbench.Types.registration_key(),
           benchmark_mod :: Regbench.Benchmark.t(),
           start_time :: non_neg_integer(),
           step :: step()
